@@ -75,6 +75,7 @@
     .print button:hover { background: var(--pri2); }
     .print button.sec { background: #e5e7eb; color: var(--tx); }
     .print button.full { grid-column: 1 / -1; }
+    .print button.chico { font-size: 13px; padding: 8px; font-weight: 500; }
     .print button:disabled { opacity: .6; cursor: wait; }
     .est { font-size: 12px; color: var(--sub); text-align: center; margin-top: 6px; }
     #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 15px; display: none; z-index: 30; max-width: calc(100% - 32px); }
@@ -175,7 +176,8 @@
             </div>
             <div class="prevWrap" id="prev"></div>
             <div class="print">
-                <button class="full" onclick="imprimir('oficina')" id="bOf">🎫 Imprimir en Ticket oficina</button>
+                <button class="full" onclick="imprimirAca()" id="bPrint">🖨️ Imprimir</button>
+                <button class="sec full chico" onclick="imprimir('oficina')" id="bOf">📡 Mandar a la ticketera de la oficina</button>
             </div>
             <div class="est" id="est"></div>
         </div>
@@ -397,7 +399,7 @@
         return [htmlTicket(its, num, fecha)];
     }
     function docHtml(body) {
-        return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}' + $('cssTicket').textContent + '</style></head><body>' + body + '</body></html>';
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' + $('cssTicket').textContent + '</style></head><body>' + body + '</body></html>';
     }
     function preview() {
         $('prev').innerHTML = ord.items.length ? tickets(ord.num || '…').join('') : '<div class="empty" style="color:#374151">Sin artículos</div>';
@@ -454,16 +456,19 @@
         if (!pend.length) { $('est').textContent = ''; toast('✅ Impreso en ' + DEST[target] + (cant > 1 ? ' (' + cant + ' tickets)' : ''), 'ok'); }
         else $('est').textContent = '⏳ Todavía no se imprimió (¿la PC está prendida?)';
     }
+    // Imprimir con el cuadro de impresión del sistema (como Ctrl+P): sirve en Windows y en Mac, con la impresora que elijas
     function imprimirAca() {
         if (!validar()) return;
         const num = asignarNum();
-        const body = tickets(num, new Date()).map((t, i) => '<div style="' + (i ? 'page-break-before:always;' : '') + '">' + t + '</div>').join('');
-        const w = window.open('', '_blank', 'width=400,height=700');
-        if (!w) { toast('El navegador bloqueó la ventana', 'err'); return; }
-        w.document.write(docHtml(body).replace('</style>', '@page{size:80mm auto;margin:0}body{padding:0 2mm}</style>'));
-        w.document.close();
-        w.onload = () => { w.focus(); w.print(); };
-        setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 600);
+        const body = tickets(num, new Date()).map((t, i) => '<div class="hoja"' + (i ? ' style="break-before:page;page-break-before:always"' : '') + '>' + t + '</div>').join('');
+        const html = docHtml(body).replace('</style>', '@page{margin:0}body{padding:0}.hoja{width:72mm;margin:0 auto}.hoja .tk{width:72mm}</style>');
+        const viejo = $('frPrint'); if (viejo) viejo.remove();
+        const fr = document.createElement('iframe');
+        fr.id = 'frPrint';
+        fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+        document.body.appendChild(fr);
+        fr.onload = () => setTimeout(() => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { toast('No se pudo abrir la impresión', 'err'); } }, 150);
+        fr.srcdoc = html;
         guardarHist(); cambio();
     }
 
