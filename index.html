@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Órdenes de Corte</title>
+<style>
+    :root {
+        --bg: #f3f4f6; --card: #fff; --tx: #111827; --sub: #6b7280; --bd: #e5e7eb;
+        --pri: #2563eb; --pri2: #1d4ed8; --ok: #059669; --err: #dc2626; --chip: #eef2ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--tx); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    header { background: #111827; color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; }
+    header h1 { font-size: 18px; margin: 0; flex: 1; }
+    header button { background: #374151; color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+    .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 16px; max-width: 1100px; margin: 0 auto; }
+    @media (max-width: 820px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+    .box { background: var(--card); border: 1px solid var(--bd); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    .box h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--sub); margin: 0 0 8px; }
+    label { font-size: 12px; color: var(--sub); display: block; margin-bottom: 3px; }
+    input, textarea, select { width: 100%; font: inherit; font-size: 16px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: var(--tx); }
+    input:focus, textarea:focus { outline: 2px solid var(--pri); border-color: transparent; }
+    textarea { resize: vertical; min-height: 40px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .row > div { flex: 1 1 110px; min-width: 0; }
+    .seg { display: flex; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; }
+    .seg button { flex: 1; border: 0; background: #fff; padding: 9px 6px; font-size: 14px; cursor: pointer; color: var(--tx); }
+    .seg button + button { border-left: 1px solid #d1d5db; }
+    .seg button.on { background: var(--pri); color: #fff; font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips button { border: 1px solid #c7d2fe; background: var(--chip); color: #1e3a8a; border-radius: 999px; padding: 7px 12px; font-size: 14px; cursor: pointer; }
+    .chips button.on { background: var(--pri); border-color: var(--pri); color: #fff; font-weight: 600; }
+    .add { display: flex; gap: 8px; }
+    .add button { flex: 1; font-size: 16px; padding: 14px; border-radius: 10px; border: 2px dashed #93c5fd; background: #eff6ff; color: #1e40af; font-weight: 600; cursor: pointer; }
+    .item { border-left: 5px solid var(--pri); }
+    .item.sabana { border-left-color: #a855f7; }
+    .itemHead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .itemHead b { flex: 1; font-size: 15px; }
+    .pos { flex: none; min-width: 34px; height: 34px; border-radius: 50%; background: #111827; color: #fff; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+    .item.mini { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 12px; }
+    .item.mini:hover { background: #f9fafb; }
+    .miniTx { flex: 1; min-width: 0; }
+    .miniTx b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .miniTx small { display: block; color: var(--sub); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .miniEd { color: var(--sub); font-size: 18px; }
+    .corte { flex: none; font-size: 12px; font-weight: 700; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+    .itemHead button { white-space: nowrap; border: 0; background: #f3f4f6; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 14px; }
+    .qty { display: flex; align-items: center; gap: 0; }
+    .qty button { width: 40px; height: 40px; border: 1px solid #d1d5db; background: #f9fafb; font-size: 20px; cursor: pointer; }
+    .qty button:first-child { border-radius: 8px 0 0 8px; }
+    .qty button:last-child { border-radius: 0 8px 8px 0; }
+    .qty input { width: 64px; height: 40px; text-align: center; border-radius: 0; border-left: 0; border-right: 0; font-weight: 700; }
+    .lblMed { font-size: 14px; font-weight: 700; color: var(--tx); }
+    .lblMed small { font-weight: 400; color: var(--sub); font-size: 12px; }
+    .qty input[readonly] { background: #fff; }
+    .dibForm { margin-top: 12px; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 10px; padding: 12px 6px; display: flex; justify-content: center; }
+    .dibForm .tk { width: 265px; padding: 0; background: transparent; }
+    .dibForm .t-dib { margin: 0; }
+    #colPop { position: absolute; z-index: 15; display: none; background: #fff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18);
+        max-height: 320px; overflow: auto; padding: 6px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; }
+    #colPop.on { display: grid; }
+    #colPop button { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; text-align: left; font-size: 16px; padding: 10px; border-radius: 8px; cursor: pointer; color: var(--tx); }
+    #colPop button:hover, #colPop button.sel { background: #eff6ff; }
+    #colPop i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); flex: none; }
+    .sep { height: 1px; background: var(--bd); margin: 10px 0; }
+    .empty { text-align: center; color: var(--sub); padding: 18px 8px; font-size: 14px; }
+    /* Vista previa */
+    .side { position: sticky; top: 64px; align-self: start; }
+    @media (max-width: 820px) { .side { position: static; } }
+    .prevWrap { background: #d1d5db; border-radius: 12px; padding: 12px 4px; display: flex; flex-direction: column; align-items: center; gap: 10px; max-height: 60vh; overflow: auto; }
+    .prevWrap .tk { box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+    .print { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .print button { border: 0; border-radius: 10px; padding: 13px 8px; font-size: 15px; font-weight: 600; cursor: pointer; background: var(--pri); color: #fff; }
+    .print button:hover { background: var(--pri2); }
+    .print button.sec { background: #e5e7eb; color: var(--tx); }
+    .print button.full { grid-column: 1 / -1; }
+    .print button:disabled { opacity: .6; cursor: wait; }
+    .est { font-size: 12px; color: var(--sub); text-align: center; margin-top: 6px; }
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111827; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 15px; display: none; z-index: 30; max-width: calc(100% - 32px); }
+    #toast.ok { background: var(--ok); } #toast.err { background: var(--err); }
+    .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; z-index: 20; }
+    .sheet-bg.on { display: flex; }
+    .sheet { background: #fff; width: 100%; max-width: 560px; max-height: 80vh; overflow: auto; border-radius: 14px 14px 0 0; padding: 14px; }
+    .sheet h3 { margin: 0 0 10px; }
+    .hist { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--bd); }
+    .hist .tx { flex: 1; min-width: 0; font-size: 14px; }
+    .hist small { color: var(--sub); display: block; }
+    .hist button { border: 0; background: var(--chip); color: #1e3a8a; border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 14px; }
+</style>
+<!-- Mismo CSS dentro del HTML que se imprime: sale igual que la vista previa -->
+<style id="cssTicket">
+    .tk { width: 265px; background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; padding: 4px 4px 10px; line-height: 1.15; }
+    .tk .t-marca { text-align: center; font-size: 21px; font-weight: 700; letter-spacing: 3px; border-bottom: 3px double #000; padding-bottom: 3px; margin-bottom: 4px; }
+    .tk .t-h { text-align: center; font-weight: 700; font-size: 22px; }
+    .tk .t-s { text-align: center; font-size: 13px; }
+    .tk .t-o { text-align: center; font-size: 17px; font-weight: 700; margin-top: 2px; overflow-wrap: anywhere; }
+    .tk .t-line { border-top: 2px dashed #000; margin: 6px 0; }
+    .tk .t-it { padding: 2px 0; }
+    .tk, .tk * { box-sizing: border-box; }
+    /* Título del artículo: qué se corta */
+    .tk .t-nro { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 30px; border: 3px solid #000; border-radius: 50%; font-size: 18px; margin-right: 8px; vertical-align: 3px; letter-spacing: 0; padding: 0 3px; }
+    .tk .t-val.t-venta { font-size: 16px; }
+    .tk .t-tit { text-align: center; font-size: 26px; font-weight: 700; letter-spacing: 2px; border-top: 3px solid #000; border-bottom: 3px solid #000; padding: 3px 0 2px; margin-bottom: 6px; }
+    /* Tabla de datos: cada dato en su casillero, nada se mezcla */
+    .tk .t-tab { border: 2px solid #000; }
+    .tk .t-row { display: flex; border-top: 1px solid #000; }
+    .tk .t-row:first-child { border-top: 0; }
+    .tk .t-lbl { width: 74px; flex: none; font-size: 11px; font-weight: 700; padding: 4px; border-right: 1px solid #000; display: flex; align-items: center; }
+    .tk .t-val { flex: 1; min-width: 0; font-size: 22px; font-weight: 700; text-transform: uppercase; padding: 5px 7px; line-height: 1.08; overflow-wrap: anywhere; display: flex; align-items: center; gap: 8px; }
+    .tk .t-val small { font-size: 14px; font-weight: 700; }
+    .tk .t-circ { width: 40px; height: 40px; border-radius: 50%; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; flex: none; }
+    .tk .t-circ.chico { width: 26px; height: 26px; font-size: 15px; }
+    .tk .t-circ.grande { width: 46px; height: 46px; font-size: 28px; }
+    .tk .t-ojo { background: #000; color: #fff; text-align: center; font-size: 16px; font-weight: 700; padding: 4px; overflow-wrap: anywhere; }   /* aviso en su propia fila, debajo de las presillas */
+    .tk .t-tab.conf { margin-top: 8px; }
+    .tk .t-tab.conf .t-val { font-size: 15px; padding: 4px 7px; }
+    /* Dibujo de la cortina, centrado: [espacio] [cortina] [cota + ALTO] */
+    .tk .t-dib { display: grid; grid-template-columns: 1fr auto 1fr; margin-top: 8px; }
+    .tk .t-an { position: relative; height: 32px; grid-column: 2; }
+    .tk .t-anTx { position: absolute; left: 50%; top: 0; transform: translateX(-50%); white-space: nowrap; font-size: 13px; font-weight: 700; }
+    .tk .t-anTx b { font-size: 20px; }
+    .tk .t-cota { position: absolute; left: 0; right: 0; bottom: 4px; border-top: 2px solid #000; }
+    .tk .t-cota::before, .tk .t-cota::after { position: absolute; top: -8px; font-size: 11px; line-height: 14px; }
+    .tk .t-cota::before { content: '◀'; left: -3px; }
+    .tk .t-cota::after { content: '▶'; right: -3px; }
+    .tk .t-tela { grid-column: 2; border: 3px solid #000; border-top: 0; position: relative; }
+    .tk .t-tela span { position: absolute; top: 38px; left: 0; right: 0; text-align: center; font-weight: 700; font-size: 11px; line-height: 1.1; }
+    .tk .t-der { grid-column: 3; display: flex; gap: 5px; padding-left: 7px; }
+    .tk .t-cotaV { flex: none; width: 0; border-left: 2px solid #000; position: relative; }
+    .tk .t-cotaV::before, .tk .t-cotaV::after { position: absolute; left: -7px; font-size: 11px; line-height: 12px; }
+    .tk .t-cotaV::before { content: '▲'; top: -3px; }
+    .tk .t-cotaV::after { content: '▼'; bottom: -3px; }
+    .tk .t-al { display: flex; flex-direction: column; justify-content: center; font-size: 13px; font-weight: 700; }
+    .tk .t-al b { font-size: 20px; white-space: nowrap; }
+    .tk .t-pv { position: absolute; top: -13px; height: 14px; transform: translateX(-50%); border: 3px solid #000; border-bottom: 0; border-radius: 5px 5px 0 0; }
+    .tk .t-cab.tubo { background: #fff; border: 3px solid #000; height: 14px; }
+    .tk .t-cano { position: absolute; left: -11px; right: -11px; top: 4px; height: 6px; background: #000; border-radius: 3px; }
+    .tk .t-pz { position: absolute; top: 12px; transform: translateX(-50%); display: flex; gap: 2px; }
+    .tk .t-cinta { position: absolute; left: -3px; right: -3px; top: 0; height: 15px; border: 2px solid #000; background: repeating-linear-gradient(90deg, #000 0 1px, #fff 1px 4px); }
+    .tk .t-cord { position: absolute; left: -11px; right: -11px; height: 2px; background: #000; }
+    .tk .t-cord::before, .tk .t-cord::after { content: ''; position: absolute; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: #000; }
+    .tk .t-cord::before { left: -3px; }
+    .tk .t-cord::after { right: -3px; }
+    .tk .t-fr { position: absolute; top: 15px; width: 2px; height: 14px; background: #000; transform: translateX(-50%); }
+    .tk .t-fr.c { height: 8px; }
+    .tk .t-pz i { display: block; width: 2px; height: 14px; background: #000; }
+    .tk .t-cab { position: absolute; left: -3px; right: -3px; top: 0; height: 12px; background: #000; }   /* cabecera = arriba (presillas / pasacaño / pellizco) */
+    .tk .t-nota { font-size: 15px; margin-top: 6px; border: 2px dashed #000; padding: 4px 6px; overflow-wrap: anywhere; }
+    .tk .t-tot { text-align: center; font-size: 16px; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+    <h1>✂️ Órdenes de Corte <small style="font-weight:400;opacity:.7;letter-spacing:2px;font-size:12px;margin-left:6px">TOUCH OF CLASS</small></h1>
+    <button onclick="abrirHist()">🕘 Últimas</button>
+    <button onclick="nueva()">🆕 Nueva</button>
+</header>
+
+<div class="wrap">
+    <main>
+        <div id="items"></div>
+
+        <div class="add">
+            <button onclick="agregar('cortina')">+ Cortina</button>
+        </div>
+    </main>
+
+    <aside class="side">
+        <div class="box">
+            <h2>Así sale el ticket</h2>
+            <div class="seg" style="margin-bottom:10px" id="segModo">
+                <button data-v="uno" onclick="setModo('uno')">Todo junto</button>
+                <button data-v="cada" onclick="setModo('cada')">Uno por artículo</button>
+            </div>
+            <div class="prevWrap" id="prev"></div>
+            <div class="print">
+                <button class="full" onclick="imprimir('oficina')" id="bOf">🎫 Imprimir en Ticket oficina</button>
+            </div>
+            <div class="est" id="est"></div>
+        </div>
+    </aside>
+</div>
+
+<div class="sheet-bg" id="histBg" onclick="if(event.target===this)cerrarHist()">
+    <div class="sheet"><h3>🕘 Últimas órdenes</h3><div id="histList"></div></div>
+</div>
+<div id="colPop"></div>
+<div id="toast"></div>
+
+<script>
+    const API = 'https://mikra-print.rafaelassir.workers.dev';
+    const KEY = 'AG4LFDaR5Yhl8QccEtwltnvH';
+    const CATEGORIAS = ['Voile', 'Blackout', 'Tropical', 'Gasa'];
+    // Medidas en metros; "Otra" = personalizada. 'tela' = ancho completo de la tela (va primero)
+    const MEDIDAS = { ancho: ['tela', '1,35', '1,40', '1,50'], alto: ['1,20', '1,50', '2,00', '2,20', '2,50'] };
+    const nomMedida = v => v === 'tela' ? 'Ancho de la tela' : v;
+    const CONFECCION = { vista: 'Presillas a la vista', ocultas: 'Presillas ocultas', pasacano: 'Pasacaño', pellizco: 'Pellizco', cinta: 'Cinta fruncidora' };   // tipo de colgado (cinta = poco frecuente, va última)
+    const conPresillas = c => c === 'vista' || c === 'ocultas';
+    const PRES_DEF = 6;                                                     // presillas por defecto (se cambia con − / +)
+    const DEST = { oficina: 'Ticket oficina' };
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+    const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+
+    // v2 (solo cortinas): el borrador de la versión anterior se descarta
+    let ord = (b => b && b.v === 2 ? b : null)(lsGet('corte_borrador', null)) || ordenVacia();
+    let modo = lsGet('corte_modo', 'uno');
+
+    function ordenVacia() { return { v: 2, num: null, origen: 'ML', ref: '', items: [] }; }
+    function itemNuevo(tipo) {
+        return { tipo: 'cortina', cant: 1, cat: '', color: '', ancho: '', alto: '', conf: 'vista', pCant: PRES_DEF, nota: '' };
+    }
+
+    // ---------- Formulario ----------
+    function setModo(v) { modo = v; lsSet('corte_modo', v); pintarSeg('segModo', v); preview(); }
+    function pintarSeg(id, v) { $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+    function pintarPedido() {}
+
+    let abierta = -1;                                                   // la única cortina desplegada (las demás quedan en una línea)
+    function abrir(i) {
+        abierta = abierta === i ? -1 : i; pintarItems();
+        if (abierta >= 0) { const c = $('items').children[i]; if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    }
+    function agregar(tipo) {
+        const it = itemNuevo(tipo);
+        const ult = ord.items[ord.items.length - 1];
+        if (ult) ['cat', 'color', 'conf'].forEach(k => it[k] = ult[k]);   // arranca igual que la anterior
+        ord.items.push(it); abierta = ord.items.length - 1;
+        pintarItems(); cambio();
+        const c = $('items').children[abierta];
+        c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => { const v = c.querySelector('[data-f="venta"]'); if (v) v.focus({ preventScroll: true }); }, 300);
+    }
+    function quitar(i) { ord.items.splice(i, 1); if (abierta === i) abierta = -1; else if (abierta > i) abierta--; pintarItems(); cambio(); }
+    function duplicar(i) { const c = JSON.parse(JSON.stringify(ord.items[i])); c.venta = ''; ord.items.splice(i + 1, 0, c); abierta = i + 1; pintarItems(); cambio(); }
+    // Orden de impresión:
+    //  1) juntas las de la MISMA tela + MISMO color (ya está el rollo encimado, se estira uno más)
+    //  2) dentro de cada grupo, de la más ALTA a la más baja
+    //  3) los grupos: primero el que tiene la cortina más alta; empate = el que se cargó antes
+    function ordenCorte() {
+        const clave = it => sinTilde(it.cat) + '|' + sinTilde(it.color);
+        const xs = ord.items.map((it, i) => ({ it, i, k: clave(it), h: metros(it.alto) }));
+        const g = {};
+        xs.forEach(x => { const t = g[x.k] || (g[x.k] = { max: 0, pri: x.i }); t.max = Math.max(t.max, x.h); });
+        return xs.sort((a, b) => a.k === b.k
+            ? (b.h - a.h) || (a.i - b.i)
+            : (g[b.k].max - g[a.k].max) || (g[a.k].pri - g[b.k].pri));
+    }
+    function posCorte(i) { return ordenCorte().findIndex(x => x.i === i) + 1; }
+    function setF(i, f, v) { ord.items[i][f] = v; cambio(); if (f === 'ancho' || f === 'alto') redibujar(i); }
+    function refrescarPos() { [...$('items').children].forEach((c, i) => { const p = c.querySelector('.corte'); if (p) p.textContent = 'sale ' + posCorte(i) + '°'; }); }
+    function redibujar(i) { const d = $('dib' + i); if (d) d.innerHTML = dibujo(ord.items[i]); }
+    function pres(i, d) { const it = ord.items[i]; it.pCant = Math.max(1, Math.min(40, (parseInt(it.pCant) || PRES_DEF) + d)); pintarItems(); cambio(); }
+    function cant(i, d) { const it = ord.items[i]; it.cant = Math.max(1, (parseInt(it.cant) || 1) + d); pintarItems(); cambio(); }
+    function setOpt(i, f, v) { ord.items[i][f] = v; pintarItems(); cambio(); }
+    function elegir(i, f, v) {
+        const it = ord.items[i]; it[f + 'Otra'] = false;
+        if (f === 'conf') { it.conf = v; if (!parseInt(it.pCant)) it.pCant = PRES_DEF; }   // confección: siempre una elegida
+        else it[f] = it[f] === v ? '' : v;                                                    // tocar de nuevo = sacar
+        pintarItems(); cambio();
+    }
+    function otra(i, f) {
+        const it = ord.items[i]; it[f + 'Otra'] = true; if (MEDIDAS[f].includes(it[f])) it[f] = '';
+        pintarItems(); cambio();
+        const el = $('items').querySelectorAll('.item')[i].querySelector('[data-otra="' + f + '"]'); if (el) el.focus();
+    }
+
+    function inp(i, f, lbl, ph, type) {
+        const it = ord.items[i];
+        return '<div><label>' + lbl + '</label><input data-f="' + f + '" ' + (type === 'num' ? 'inputmode="decimal" ' : '') + (f === 'color' ? 'autocomplete="off" onfocus="abrirColores(' + i + ',this)" onblur="cerrarColoresLuego()" onkeydown="teclaColor(event)" ' : '') +
+            'placeholder="' + (ph || '') + '" value="' + esc(it[f]) + '" oninput="setF(' + i + ',\'' + f + '\',this.value)' + (f === 'color' ? ';filtrarColores()' : '') + '"></div>';
+    }
+    function pintarItems() {
+        const box = $('items');
+        if (!ord.items.length) { box.innerHTML = '<div class="box empty">Tocá + Cortina para empezar 👇</div>'; return; }
+        box.innerHTML = ord.items.map((it, i) => {
+            const pos = posCorte(i);
+            if (i !== abierta) {                                         // plegada: un renglón con lo importante
+                const med = (it.ancho === 'tela' ? 'tela' : (n(it.ancho) || '?')) + ' × ' + (n(it.alto) || '?') + ' m';
+                return '<div class="box item mini" onclick="abrir(' + i + ')">' +
+                    '<span class="pos">' + (i + 1) + '</span>' +
+                    '<div class="miniTx"><b>' + (parseInt(it.cant) || 1) + ' × ' + esc(it.cat || 'Cortina') + ' ' + esc(it.color || '') + '</b>' +
+                    '<small>' + esc(med) + (it.conf ? ' · ' + esc(CONFECCION[it.conf]) : '') + (it.venta ? ' · ' + esc(it.venta) : '') + '</small></div>' +
+                    '<span class="corte" title="Orden en que se imprime (de la más alta a la más baja)">sale ' + pos + '°</span><span class="miniEd">✎</span></div>';
+            }
+            const qty = '<div style="flex:0 0 auto"><label>Cantidad</label><div class="qty"><button onclick="cant(' + i + ',-1)">−</button>' +
+                '<input inputmode="numeric" value="' + esc(it.cant) + '" oninput="setF(' + i + ',\'cant\',this.value)"><button onclick="cant(' + i + ',1)">+</button></div></div>';
+            const chips = (lbl, f, lista, nombre) => '<div style="margin-top:10px"><label>' + lbl + '</label><div class="chips">' +
+                lista.map(v => '<button class="' + (it[f] === v && !it[f + 'Otra'] ? 'on' : '') + '" onclick="elegir(' + i + ',\'' + f + '\',\'' + v + '\')">' + (nombre ? nombre(v) : v) + '</button>').join('') +
+                '</div></div>';
+            const medida = (lbl, f) => '<div style="margin-top:10px"><label class="lblMed">' + lbl + '</label><div class="chips">' +
+                MEDIDAS[f].map(v => '<button class="' + (it[f] === v && !it[f + 'Otra'] ? 'on' : '') + '" onclick="elegir(' + i + ',\'' + f + '\',\'' + v + '\')">' + nomMedida(v) + '</button>').join('') +
+                '<button class="' + (it[f + 'Otra'] ? 'on' : '') + '" onclick="otra(' + i + ',\'' + f + '\')">Otra…</button></div>' +
+                (it[f + 'Otra'] ? '<input style="margin-top:6px;max-width:160px" inputmode="decimal" data-otra="' + f + '" placeholder="ej. 1,75" value="' + esc(it[f]) + '" oninput="setF(' + i + ',\'' + f + '\',this.value)">' : '') +
+                '</div>';
+            let cuerpo =
+                '<div style="margin-bottom:8px">' + inp(i, 'venta', 'N° de venta / comprador', 'opcional') + '</div>' +
+                '<div class="row">' + qty + inp(i, 'color', 'Color', 'ej. Beige') + '</div>' +
+                chips('Tela', 'cat', CATEGORIAS) +
+                medida('↔ ANCHO <small>de lado a lado, donde van las presillas (metros)</small>', 'ancho') +
+                medida('↕ ALTO <small>de arriba hacia abajo (metros)</small>', 'alto') +
+                chips('Tipo de colgado', 'conf', Object.keys(CONFECCION), k => CONFECCION[k]);
+            if (conPresillas(it.conf)) cuerpo += '<div style="margin-top:10px"><label>Cantidad de presillas</label><div class="qty">' +
+                '<button onclick="pres(' + i + ',-1)">−</button><input readonly value="' + esc(it.pCant || PRES_DEF) + '"><button onclick="pres(' + i + ',1)">+</button></div></div>';
+            cuerpo += '<div class="dibForm"><div class="tk" id="dib' + i + '">' + dibujo(it) + '</div></div>';
+            return '<div class="box item ' + it.tipo + '">' +
+                '<div class="itemHead"><span class="pos">' + (i + 1) + '</span><b>Cortina</b><span class="corte">sale ' + pos + '°</span>' +
+                '<button title="Duplicar" onclick="duplicar(' + i + ')">⧉</button><button title="Quitar" onclick="quitar(' + i + ')">🗑️</button>' +
+                '<button title="Plegar" onclick="abrir(' + i + ')">▲ Listo</button></div>' +
+                cuerpo +
+                '<div style="margin-top:8px"><label>Nota (opcional)</label><input data-f="nota" value="' + esc(it.nota) + '" placeholder="ej. con dobladillo" oninput="setF(' + i + ',\'nota\',this.value)"></div>' +
+                '</div>';
+        }).join('');
+    }
+
+    // ---------- Ticket ----------
+    const n = v => String(v || '').trim().replace('.', ',');
+    function fechaTxt(d) { d = d || new Date(); const p = x => String(x).padStart(2, '0'); return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+    // Dibujo de la parte de arriba según la confección
+    function dibujoCabecera(it, tw) {
+        if (it.conf === 'vista') {                          // piquitos para arriba: uno por presilla
+            const q = Math.min(40, Math.max(1, parseInt(it.pCant) || PRES_DEF));
+            const w = Math.max(3, Math.min(12, Math.floor((tw || 130) / q) - 3));
+            let h = '<div class="t-cab"></div>';
+            for (let i = 0; i < q; i++) h += '<div class="t-pv" style="left:' + ((i + 0.5) / q * 100).toFixed(2) + '%;width:' + w + 'px"></div>';
+            return h;
+        }
+        if (it.conf === 'pasacano') return '<div class="t-cab tubo"></div><div class="t-cano"></div>';   // el caño pasa por adentro
+        if (it.conf === 'pellizco') {                       // tablitas de pellizco debajo de la cabecera
+            let h = '<div class="t-cab"></div>';
+            const g = Math.max(2, Math.min(6, Math.round((tw || 130) / 28)));
+            for (let i = 0; i < g; i++) h += '<div class="t-pz" style="left:' + ((i + 0.5) / g * 100).toFixed(2) + '%"><i></i><i></i><i></i></div>';
+            return h;
+        }
+        if (it.conf === 'cinta') {                          // cinta fruncidora: la cinta cosida arriba, los cordones salen por los costados (con nudo) y la tela fruncida abajo
+            let h = '<div class="t-cinta"></div><div class="t-cord" style="top:4px"></div><div class="t-cord" style="top:9px"></div>';
+            const g = Math.max(6, Math.floor((tw || 130) / 6));
+            for (let i = 0; i < g; i++) h += '<div class="t-fr' + (i % 2 ? ' c' : '') + '" style="left:' + ((i + 0.5) / g * 100).toFixed(2) + '%"></div>';
+            return h;
+        }
+        return '<div class="t-cab"></div>';                 // ocultas / sin elegir: queda como está
+    }
+    // metros a número ("1,50" → 1.5; si escriben centímetros, "150" → 1.5)
+    function metros(v) { let x = parseFloat(String(v || '').replace(',', '.')); if (!(x > 0)) return 0; if (x > 10) x /= 100; return x; }
+    // Cortina dibujada con su ancho y alto (a escala) + cotas con flechas, para que nadie la haga al revés
+    function dibujo(it) {
+        const a = n(it.ancho), l = n(it.alto);
+        const am = metros(a) || 1.5, lm = metros(l) || 2.2;          // sin medida: tamaño de muestra
+        const K = Math.min(48, 118 / am, 130 / lm);                  // px por metro (entra en el ticket)
+        const tw = Math.max(44, Math.round(am * K)), th = Math.max(50, Math.round(lm * K));
+        const arriba = it.conf === 'vista' ? 'margin-top:13px;' : '';   // lugar para los piquitos de las presillas
+        return '<div class="t-dib">' +
+            '<div class="t-an" style="width:' + tw + 'px"><div class="t-anTx">' + (a === 'tela' ? 'ANCHO <b>DE LA TELA</b>' : 'ANCHO <b>' + esc(a || '?') + ' m</b>') + '</div><div class="t-cota"></div></div>' +
+            '<div class="t-tela" style="width:' + tw + 'px;height:' + th + 'px;' + arriba + '">' + dibujoCabecera(it, tw) +
+            (th >= 70 && tw >= 58 ? '<span>▲ ARRIBA</span>' : '') + '</div>' +
+            '<div class="t-der" style="height:' + th + 'px;' + arriba + (it.conf === 'cinta' || it.conf === 'pasacano' ? 'padding-left:16px;' : '') + '"><div class="t-cotaV"></div><div class="t-al">ALTO<b>' + esc(l || '?') + ' m</b></div></div>' +
+            '</div>';
+    }
+    function htmlItem(it, pos) {
+        const q = parseInt(it.cant) || 1;
+        const fila = (lbl, val) => '<div class="t-row"><div class="t-lbl">' + lbl + '</div><div class="t-val">' + val + '</div></div>';
+        let h = '<div class="t-it"><div class="t-tit">' + (pos ? '<span class="t-nro">' + pos + '</span>' : '') + (q === 1 ? 'CORTINA' : 'CORTINAS') + '</div>' +
+            '<div class="t-tab">' +
+            ((it.venta || '').trim() ? '<div class="t-row"><div class="t-lbl">VENTA</div><div class="t-val t-venta">' + esc(it.venta.trim()) + '</div></div>' : '') +
+            fila('CANTIDAD', '<span class="t-circ">' + q + '</span><small>' + (q === 1 ? 'cortina' : 'cortinas') + '</small>') +
+            fila('TELA', esc(it.cat || '—')) +
+            fila('COLOR', esc(it.color.trim() || '—')) +
+            '</div>';
+        h += dibujo(it);
+        if (it.conf) {
+            let filas;
+            if (conPresillas(it.conf)) {
+                const pc = parseInt(it.pCant) || PRES_DEF;
+                const esp = pc !== PRES_DEF;                                  // distinto de lo normal → grande, para que se note
+                filas = fila('PRESILLAS', '<span class="t-circ ' + (esp ? 'grande' : 'chico') + '">' + pc + '</span>' +
+                    '<small style="white-space:nowrap">' + (it.conf === 'ocultas' ? 'OCULTAS' : 'A LA VISTA') + '</small>' + '') + (esp ? '<div class="t-ojo">¡OJO! SON ' + pc + ' PRESILLAS (NO ' + PRES_DEF + ')</div>' : '');
+            } else filas = fila('COLGADO', CONFECCION[it.conf].toUpperCase());
+            h += '<div class="t-tab conf">' + filas + '</div>';
+        }
+        if ((it.nota || '').trim()) h += '<div class="t-nota">» ' + esc(it.nota.trim()) + '</div>';
+        return h + '</div>';
+    }
+    function htmlTicket(items, num, fecha, parte) {
+        const total = items.reduce((s, x) => s + (parseInt(x.it.cant) || 1), 0);
+        let h = '<div class="tk"><div class="t-marca">TOUCH OF CLASS</div><div class="t-h">ORDEN DE CORTE' + (num ? ' #' + num : '') + '</div>' +
+            '<div class="t-s">' + fechaTxt(fecha) + (parte ? ' · ' + parte : '') + '</div>';
+        h += '<div class="t-line"></div>' + items.map(x => htmlItem(x.it, x.pos)).join('<div class="t-line"></div>');
+        if (items.length > 1) h += '<div class="t-line"></div><div class="t-tot">TOTAL: ' + total + ' unidades</div>';
+        return h + '</div>';
+    }
+    // Lista de tickets a imprimir (uno solo, o uno por artículo)
+    function tickets(num, fecha) {
+        const its = ordenCorte().map((x, k) => ({ it: x.it, pos: ord.items.length > 1 ? k + 1 : 0 }));   // de la más alta a la más baja
+        if (modo === 'cada' && its.length > 1) return its.map((x, k) => htmlTicket([x], num, fecha, (k + 1) + ' de ' + its.length));
+        return [htmlTicket(its, num, fecha)];
+    }
+    function docHtml(body) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}' + $('cssTicket').textContent + '</style></head><body>' + body + '</body></html>';
+    }
+    function preview() {
+        $('prev').innerHTML = ord.items.length ? tickets(ord.num || '…').join('') : '<div class="empty" style="color:#374151">Sin artículos</div>';
+    }
+    function cambio() { lsSet('corte_borrador', ord); preview(); if ($('items').children.length === ord.items.length) refrescarPos(); }
+
+    // ---------- Imprimir ----------
+    function validar() {
+        if (!ord.items.length) { toast('Agregá al menos un artículo', 'err'); return false; }
+        const malo = ord.items.findIndex(it => it.tipo === 'cortina' && (!n(it.ancho) || !n(it.alto)));
+        if (malo >= 0) { toast('Falta ancho o alto en la cortina #' + (malo + 1), 'err'); return false; }
+        return true;
+    }
+    function asignarNum() {
+        if (!ord.num) { const s = (lsGet('corte_seq', 0) || 0) + 1; lsSet('corte_seq', s); ord.num = s; }
+        return ord.num;
+    }
+    const api = (path, opt) => fetch(API + path, Object.assign({ cache: 'no-store' }, opt || {}, { headers: { 'Content-Type': 'application/json', 'X-Key': KEY } })).then(r => r.json());
+
+    async function imprimir(target) {
+        if (!validar()) return;
+        const btns = [$('bOf')]; btns.forEach(b => b.disabled = true);
+        $('est').textContent = '⏳ Mandando…';
+        try {
+            const num = asignarNum(), fecha = new Date();
+            const tks = tickets(num, fecha);
+            const ids = [];
+            for (const t of tks) {
+                const r = await api('/job', { method: 'POST', body: JSON.stringify({ html: docHtml(t), title: 'Corte #' + num, target, copies: 1 }) });
+                if (!r.id) throw new Error(r.error || 'sin respuesta');
+                ids.push(r.id);
+            }
+            guardarHist(); cambio();
+            $('est').textContent = '📡 Enviado a ' + DEST[target] + ', esperando…';
+            seguir(ids, target, tks.length);
+        } catch (e) {
+            $('est').textContent = '';
+            toast('⚠️ No se pudo mandar: ' + e.message, 'err');
+        } finally { btns.forEach(b => b.disabled = false); }
+    }
+    async function seguir(ids, target, cant) {
+        const hasta = Date.now() + 45000;
+        let pend = ids.slice();
+        while (pend.length && Date.now() < hasta) {
+            await new Promise(r => setTimeout(r, 1500));
+            const sig = [];
+            for (const id of pend) {
+                let j; try { j = await api('/job?id=' + id); } catch (e) { sig.push(id); continue; }
+                if (j.status === 'offline') { $('est').textContent = ''; toast('⚠️ ' + DEST[target] + ' no responde. Probá con la otra.', 'err'); try { api('/job/cancel', { method: 'POST', body: JSON.stringify({ id }) }); } catch (e) {} return; }
+                if (j.status !== 'done') sig.push(id);
+            }
+            pend = sig;
+        }
+        if (!pend.length) { $('est').textContent = ''; toast('✅ Impreso en ' + DEST[target] + (cant > 1 ? ' (' + cant + ' tickets)' : ''), 'ok'); }
+        else $('est').textContent = '⏳ Todavía no se imprimió (¿la PC está prendida?)';
+    }
+    function imprimirAca() {
+        if (!validar()) return;
+        const num = asignarNum();
+        const body = tickets(num, new Date()).map((t, i) => '<div style="' + (i ? 'page-break-before:always;' : '') + '">' + t + '</div>').join('');
+        const w = window.open('', '_blank', 'width=400,height=700');
+        if (!w) { toast('El navegador bloqueó la ventana', 'err'); return; }
+        w.document.write(docHtml(body).replace('</style>', '@page{size:80mm auto;margin:0}body{padding:0 2mm}</style>'));
+        w.document.close();
+        w.onload = () => { w.focus(); w.print(); };
+        setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 600);
+        guardarHist(); cambio();
+    }
+
+    // ---------- Historial ----------
+    function resumen(o) {
+        return o.items.map(it => (parseInt(it.cant) || 1) + ' ' + (it.cat || 'cortina') + ' ' + n(it.ancho) + '×' + n(it.alto) + (it.color ? ' ' + it.color : '')).join(' · ');
+    }
+    // ---------- Colores (autocompletar) ----------
+    // [nombre, muestra] — la muestra es solo para la pantalla (el ticket sale en blanco y negro)
+    const COLORES = [['Blanco', '#ffffff'], ['Blanco óptico', '#fbfdff'], ['Crudo', '#efe6d2'], ['Natural', '#e9dfc8'], ['Hueso', '#ece3cf'], ['Marfil', '#f6efdc'],
+        ['Tiza', '#f1efe9'], ['Beige', '#dcc9a6'], ['Arena', '#cdb891'], ['Lino', '#d9ccb2'], ['Champagne', '#e7d3a8'],
+        ['Gris', '#9a9a9a'], ['Gris perla', '#d3d3d0'], ['Gris claro', '#c4c4c4'], ['Gris oscuro', '#555555'], ['Gris topo', '#7b7166'], ['Topo', '#857868'],
+        ['Plata', '#c0c0c0'], ['Plomo', '#6d7176'], ['Grafito', '#3d3f42'], ['Negro', '#111111'],
+        ['Visón', '#9c8774'], ['Camel', '#b88a55'], ['Habano', '#9b6b3d'], ['Tostado', '#a8794d'], ['Marrón', '#6b4226'], ['Chocolate', '#4a2c1d'],
+        ['Terracota', '#c0623e'], ['Ladrillo', '#a2452e'], ['Óxido', '#a5512a'],
+        ['Amarillo', '#f2d230'], ['Mostaza', '#cc9e2b'], ['Oro', '#c9a227'], ['Dorado', '#d4af37'], ['Naranja', '#ee7d22'], ['Coral', '#f27c6b'], ['Salmón', '#f39b85'], ['Durazno', '#f6bf98'],
+        ['Rosa', '#f2a7bd'], ['Rosa viejo', '#c48b8f'], ['Rosa bebé', '#f7cfdc'], ['Fucsia', '#d81b80'], ['Rojo', '#d0202a'], ['Bordó', '#7a1428'], ['Vino', '#5e1224'],
+        ['Lila', '#c3a5d6'], ['Lavanda', '#b8a7dd'], ['Violeta', '#7044a0'], ['Uva', '#5a2a5e'],
+        ['Celeste', '#8ec9ee'], ['Azul', '#1f4fb3'], ['Azul francia', '#2a5bd7'], ['Azul marino', '#14224d'], ['Petróleo', '#1c5560'], ['Turquesa', '#2ab3b1'], ['Aqua', '#7fd8d0'],
+        ['Verde', '#2e8b3e'], ['Verde agua', '#9fd9c4'], ['Menta', '#a8e6c4'], ['Verde manzana', '#8cc63f'], ['Verde oliva', '#6b6b2a'], ['Verde musgo', '#4d5d2a'],
+        ['Verde inglés', '#1f4a2c'], ['Militar', '#565b3a']];
+    const sinTilde = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    function listaColores() {
+        const propios = lsGet('corte_colores', []).filter(c => !COLORES.some(x => sinTilde(x[0]) === sinTilde(c)));   // escritos a mano
+        return [...propios.map(c => [c, '']), ...COLORES];
+    }
+    // Desplegable propio (grande, con muestra de color) debajo del campo Color
+    let _colIdx = -1, _colInput = null, _colSel = 0, _colTimer;
+    function abrirColores(i, el) { clearTimeout(_colTimer); _colIdx = i; _colInput = el; filtrarColores(); }
+    function cerrarColoresLuego() { _colTimer = setTimeout(cerrarColores, 180); }
+    function cerrarColores() { $('colPop').classList.remove('on'); _colIdx = -1; }
+    function filtrarColores() {
+        if (_colIdx < 0 || !_colInput) return;
+        const q = sinTilde(_colInput.value);
+        let l = listaColores();
+        if (q) {
+            l = l.filter(c => sinTilde(c[0]).includes(q));
+            l.sort((a, b) => (sinTilde(b[0]).startsWith(q) - sinTilde(a[0]).startsWith(q)));   // primero los que empiezan igual
+            if (l.length === 1 && sinTilde(l[0][0]) === q) l = [];                              // ya está escrito completo
+        }
+        const pop = $('colPop');
+        if (!l.length) { pop.classList.remove('on'); return; }
+        _colSel = 0;
+        pop.innerHTML = l.map((c, k) => '<button type="button" class="' + (k === 0 && q ? 'sel' : '') + '" onmousedown="event.preventDefault()" onclick="elegirColor(\'' + esc(c[0]).replace(/'/g, '&#39;') + '\')">' +
+            '<i style="background:' + (c[1] || 'repeating-linear-gradient(45deg,#ddd 0 4px,#fff 4px 8px)') + '"></i>' + esc(c[0]) + '</button>').join('');
+        const r = _colInput.getBoundingClientRect();
+        pop.style.left = (r.left + window.scrollX) + 'px';
+        pop.style.top = (r.bottom + window.scrollY + 4) + 'px';
+        pop.style.width = Math.max(r.width, 300) + 'px';
+        pop.classList.add('on');
+    }
+    function elegirColor(c) {
+        if (_colIdx < 0) return;
+        const i = _colIdx;
+        setF(i, 'color', c); _colInput.value = c; cerrarColores(); _colInput.blur();
+    }
+    function teclaColor(e) {
+        const pop = $('colPop'); if (!pop.classList.contains('on')) return;
+        const bs = [...pop.querySelectorAll('button')];
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const cur = bs.findIndex(b => b.classList.contains('sel'));
+            const nx = Math.max(0, Math.min(bs.length - 1, cur + (e.key === 'ArrowDown' ? 1 : -1)));
+            bs.forEach(b => b.classList.remove('sel')); bs[nx].classList.add('sel'); bs[nx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            const b = bs.find(b => b.classList.contains('sel')); if (b) { e.preventDefault(); b.click(); }
+        } else if (e.key === 'Escape') cerrarColores();
+    }
+    window.addEventListener('resize', () => { if (_colIdx >= 0) filtrarColores(); });
+    function recordarColores() {
+        const propios = lsGet('corte_colores', []);
+        ord.items.forEach(it => {
+            const c = (it.color || '').trim();
+            if (c && !COLORES.some(x => sinTilde(x[0]) === sinTilde(c)) && !propios.some(x => sinTilde(x) === sinTilde(c))) propios.unshift(c);
+        });
+        lsSet('corte_colores', propios.slice(0, 100));
+    }
+    function guardarHist() {
+        recordarColores();
+        const h = lsGet('corte_hist', []).filter(x => x.num !== ord.num);
+        h.unshift(Object.assign(JSON.parse(JSON.stringify(ord)), { at: Date.now() }));
+        lsSet('corte_hist', h.slice(0, 50));
+    }
+    function abrirHist() {
+        const h = lsGet('corte_hist', []).filter(o => o.v === 2);   // las de la versión de prueba anterior no se muestran
+        $('histList').innerHTML = h.length ? h.map((o, i) =>
+            '<div class="hist"><div class="tx"><b>#' + o.num + '</b> ' + esc(o.origen === 'ML' ? 'ML' : 'Cliente') + (o.ref ? ': ' + esc(o.ref) : '') +
+            '<small>' + esc(resumen(o)) + '</small><small>' + fechaTxt(new Date(o.at)) + '</small></div>' +
+            '<button onclick="abrirOrden(' + i + ',false)">Abrir</button><button onclick="abrirOrden(' + i + ',true)">Copiar</button></div>').join('')
+            : '<div class="empty">Todavía no imprimiste ninguna</div>';
+        $('histBg').classList.add('on');
+    }
+    function cerrarHist() { $('histBg').classList.remove('on'); }
+    function abrirOrden(i, copia) {
+        const o = JSON.parse(JSON.stringify(lsGet('corte_hist', []).filter(o => o.v === 2)[i]));
+        delete o.at; if (copia) o.num = null;
+        ord = o; cerrarHist(); todo();
+        toast(copia ? 'Copia como orden nueva' : 'Abierta la #' + o.num + ' (reimprime con el mismo número)');
+    }
+    function nueva() {
+        if (ord.items.length && !ord.num && !confirm('¿Descartar esta orden sin imprimir?')) return;
+        ord = ordenVacia(); todo();
+    }
+
+    let _tt;
+    function toast(msg, cls) { const t = $('toast'); t.textContent = msg; t.className = cls || ''; t.style.display = 'block'; clearTimeout(_tt); _tt = setTimeout(() => t.style.display = 'none', 3500); }
+    function todo() { pintarPedido(); pintarItems(); pintarSeg('segModo', modo); cambio(); }
+    todo();
+</script>
+</body>
+</html>
